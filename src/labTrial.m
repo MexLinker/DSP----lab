@@ -1,16 +1,15 @@
 %% 读取语音信息 
 [myAudio, FsA] = audioread('./../media/readAudio.m4a');
 
-%% 播放语音，输出语音的时域波形
+%% 播放语音，输出语音的时域、频域波形
 N = length(myAudio); %求取抽样点数
 t = (0:N-1)/FsA; %每一个采样点的实际时间
 
-myAudio_fft = fft(myAudio);%对信号进行傅里叶变换
+myAudio_fft = fft(myAudio); %对信号进行傅里叶变换
 myAudio_fft_abs_half = abs(myAudio_fft(1:round(N/2))); %取绝对值与fft的一半
 
 % round四舍五入为最近的小数或整数
 f = FsA/N*(0:round(N/2)-1); %显示实际频点的一半 
-% ？？？？？？？？？？？？？？？？
 
 % subplots是设置子图的，这句话表示大图含有2行1列共2个子图，正在绘制的是第一个
 subplot(211);
@@ -35,32 +34,19 @@ sound(myAudio, 1 * FsA); % 播放原始声音
 convMyAudio = conv(impulse, myAudio); %对两信号卷积
 sound(convMyAudio, FsA);
 
-%% 滤波 -- 使用简易 1维数字滤波器 -- 使用filter
-
-% 构建滤波器参数
-a = 1;
-windowSize = 10;
-b = (1/windowSize)*ones(1,windowSize);
-% y = filter(b,a,x);
-
-% 使用滤波器对时域信号进行滤波
-fiMyAudio = filter(b, a, myAudio);
-fiMyAudio = fiMyAudio'; %转置
-
-%播放滤波后的声音信号
-sound(fiMyAudio, FsA);
-
-%对比声音信号
 subplot(211);
-plot(t, myAudio,'g');%绘制时域波形，放大来看，很明显毛刺被去掉了
-xlabel('Time/(s)');
-title('原始的波形');
+plot(f,myAudio_fft_abs_half);
+xlabel('Frequency/(Hz)');
+title('原始信号的频谱');
 grid;
 
 subplot(212);
-plot(t, fiMyAudio);
+%取绝对值与fft的一半
+convMyAudio_fft = fft(convMyAudio);
+convMyAudio_fft_half = abs(convMyAudio_fft(1:round(N/2))); 
+plot(f, convMyAudio_fft_half)
 xlabel('Frequency/(Hz)');
-title('滤波后的波形');
+title('卷积后信号的频谱');
 grid;
 
 %% 信号分析
@@ -94,6 +80,7 @@ grid;
 % 播放信号分析后音频
 sound(abs(ifft(myAudio_fft_right)), FsA);
 
+
 %% 变声 -- 使频谱统一右移
 
 % myAudio_fft_right = myAudio_fft;
@@ -105,9 +92,10 @@ for i = 1:size(myAudio_fft_right)
 end
 
 plot(abs(myAudio_fft_right));
-
+title('变声后的频谱');
 back = ifft(myAudio_fft_right);
 
+% 播放变声后的语音信号
 sound(abs(back), FsA);
 
 
@@ -117,7 +105,7 @@ sound(abs(back), FsA);
 Nseq = 0:1:N-1;
 
 % 高频噪声
-noise = ( cos(6000/ FsA * pi * Nseq)+ cos(6500/ FsA * pi * Nseq)+ cos(10000/ FsA * pi * N))* 0.5; 
+noise = ( cos(6000/ FsA * pi * Nseq )+ cos(6500/ FsA * pi * Nseq) + cos(7000/ FsA * pi * N)); 
 
 % 原始信号 合成 高频噪声
 myAudio_addNoise = myAudio + noise';
@@ -183,7 +171,7 @@ title('巴特沃斯低通滤波器相位特性'); axis([0,5000,-1000,10]) ;grid on;
 
 %% 滤波 -- 3 -- 滤波操作
 
-x1 = myAudio;
+x1 = myAudio_addNoise;
 N1=length(x1);
 Y1 = fft(x1);
 
@@ -212,7 +200,8 @@ myAudio_afterFiltered_fft_half = abs(myAudio_afterFiltered_fft(1:round(N/2)));
 plot(f, myAudio_afterFiltered_fft_half)
 xlabel('Frequency/(Hz)');
 title('滤波后信号的频谱');
-grid;
+axis([0,2.5*10^4,0,1500]) ;
+grid on; 
 
 %% 滤波 -- 5 -- 滤波后时域
 
